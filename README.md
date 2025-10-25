@@ -19,6 +19,25 @@ nvm use 20
 node --version  # should be >= 20
 ```
 
+Pre-commit hooks
+---------------
+
+This repository uses Husky and lint-staged to run formatting and linting on staged TypeScript files before each commit. To enable the git hooks locally run the installer (this is run automatically after `npm install` because the project defines a `prepare` script):
+
+```bash
+npm install
+# or, if needed:
+npm run prepare
+```
+
+When you commit, the pre-commit hook will run Prettier and ESLint on staged `*.ts` files and update the staged files with any fixes. If you need to skip the hooks for a one-off commit, use:
+
+```bash
+git commit -m "msg" --no-verify
+```
+
+It's recommended to keep these hooks enabled to avoid style/lint regressions being pushed to the repo.
+
 ## Compile and run the project
 
 ```bash
