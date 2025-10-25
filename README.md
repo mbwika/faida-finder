@@ -8,6 +8,17 @@ A web scraping app built with Nestjs that helps Kenyans find out what benefits t
 $ yarn install
 ```
 
+Node.js
+------
+
+This project targets Node.js 20+. Use a Node version manager and set your local environment to Node 20:
+
+```bash
+nvm use 20
+# or
+node --version  # should be >= 20
+```
+
 ## Compile and run the project
 
 ```bash

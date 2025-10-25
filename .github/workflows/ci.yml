@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Build
+        run: npm run build
+
+      - name: Run unit tests
+        run: npm test --silent -- --runInBand
+
+      - name: Coverage
+        run: npm run test:cov
+
+  snyk-scan:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+
+      - name: Run Snyk scans (auth required for Snyk Code)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
+        run: |
+          # Run Snyk only for pushes to main OR when SNYK_TOKEN is provided (e.g., configured in repo settings)
+          if { [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; } || [ -n "$SNYK_TOKEN" ]; then
+            echo "Snyk conditions met. Proceeding with scans..."
+          else
+            echo "Not a main push and SNYK_TOKEN not set; skipping Snyk scans.";
+            exit 0;
+          fi
+
+          if [ -z "$SNYK_TOKEN" ]; then
+            # If token missing, run unauthenticated Snyk test (SCA) if available, but skip Snyk Code which requires auth
+            echo "SNYK_TOKEN not set; running 'snyk test' only (may be limited).";
+            snyk test || true
+            exit 0
+          fi
+
+          snyk auth "$SNYK_TOKEN"
+          snyk code test
+          snyk test
