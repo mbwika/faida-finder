@@ -40,15 +40,20 @@ It's recommended to keep these hooks enabled to avoid style/lint regressions bei
 
 ## Compile and run the project
 
+By default the app runs on port 3333 and will try the next available port up to 3342 if needed. You can set a specific port with the PORT environment variable.
+
 ```bash
-# development
-$ yarn run start
+# development (port 3333)
+$ npm start
+
+# development on specific port
+$ PORT=4000 npm start
 
 # watch mode
-$ yarn run start:dev
+$ npm run start:dev
 
 # production mode
-$ yarn run start:prod
+$ npm run start:prod
 ```
 
 ## Run tests

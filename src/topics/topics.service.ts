@@ -1,6 +1,10 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Document } from '../entities/document.entity';
+import { Topic } from '../entities/topic.entity';
 
 type TopicConfig = {
   id: string;
@@ -65,19 +69,41 @@ export class TopicsService implements OnModuleInit {
     },
   ];
 
-  // in-memory store: topicId -> array of scraped text blocks
-  private readonly store = new Map<string, string[]>();
+  // in-memory cache for quick access
+  private readonly cache = new Map<string, string[]>();
+
+  constructor(
+    @InjectRepository(Document)
+    private readonly docRepo: Repository<Document>,
+    @InjectRepository(Topic)
+    private readonly topicRepo: Repository<Topic>,
+  ) {}
 
   async onModuleInit() {
     this.logger.log(
       'Initializing TopicsService and scraping configured URLs...',
     );
-    await Promise.all(this.topics.map((t) => this.scrapeTopic(t)));
-    this.logger.log('TopicsService initialization complete.');
+
+    // ensure topics exist in DB
+    for (const t of this.topics) {
+      let rec = await this.topicRepo.findOneBy({ key: t.id });
+      if (!rec) {
+        rec = this.topicRepo.create({ key: t.id, name: t.name });
+        await this.topicRepo.save(rec);
+      }
+    }
+
+    // perform initial scrape in background (don't block boot too long)
+    for (const t of this.topics) {
+      this.scrapeTopic(t).catch((err) =>
+        this.logger.warn('Initial scrape failed: ' + String(err)),
+      );
+    }
+
+    this.logger.log('TopicsService initialization scheduled scrapes.');
   }
 
   getTopics() {
-    // return only id, name and suggestedQuestions (do not expose URLs)
     return this.topics.map((t) => ({
       id: t.id,
       name: t.name,
@@ -85,15 +111,15 @@ export class TopicsService implements OnModuleInit {
     }));
   }
 
+  // Synchronous interface: returns best-matching blocks from DB cache
   ask(topicId: string, question: string) {
-    const docs = this.store.get(topicId) ?? [];
+    const docs = this.cache.get(topicId) ?? [];
     if (docs.length === 0)
       return {
         answer: 'No information available for that topic yet.',
         referencesCount: 0,
       };
 
-    // Simple relevance: find text blocks containing the most words from the question
     const words = question
       .toLowerCase()
       .split(/[^\p{L}\p{N}]+/u)
@@ -110,8 +136,7 @@ export class TopicsService implements OnModuleInit {
       .sort((a, b) => b.score - a.score);
 
     if (scored.length === 0) {
-      // fallback: return a short combined summary (first 2 blocks)
-      const fallback = docs.slice(0, 2).join('\n\n');
+      const fallback = docs.slice(0, 3).join('\n\n');
       return {
         answer: fallback || 'No relevant information found.',
         referencesCount: docs.length,
@@ -125,7 +150,15 @@ export class TopicsService implements OnModuleInit {
     return { answer: top, referencesCount: scored.length };
   }
 
-  private async scrapeTopic(topic: TopicConfig) {
+  // Re-scrape a single topic and update DB and cache
+  async refreshTopic(topicId: string) {
+    const cfg = this.topics.find((t) => t.id === topicId);
+    if (!cfg) throw new Error('Unknown topic');
+    await this.scrapeTopic(cfg, { persist: true });
+    return { refreshed: true };
+  }
+
+  private async scrapeTopic(topic: TopicConfig, opts?: { persist?: boolean }) {
     const blocks: string[] = [];
     for (const url of topic.urls) {
       try {
@@ -135,18 +168,39 @@ export class TopicsService implements OnModuleInit {
         });
         const html = res.data as string;
         const $ = cheerio.load(html);
-        // collect paragraphs and headings
         const texts: string[] = [];
         $('h1,h2,h3,h4,p,li').each((_, el) => {
           const t = $(el).text().trim();
-          if (t.length > 50) texts.push(t);
+          if (t.length > 40) texts.push(t);
         });
-        // store as blocks
         blocks.push(...texts);
-      } catch (err) {
-        this.logger.warn(`Failed to scrape ${url}: ${(err as Error).message}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`Failed to scrape ${url}: ${msg}`);
       }
     }
-    this.store.set(topic.id, blocks);
+
+    // save to cache
+    this.cache.set(topic.id, blocks);
+
+    if (opts?.persist) {
+      // persist to DB: clear old docs for topic and insert new ones
+      const topicRec = await this.topicRepo.findOneBy({ key: topic.id });
+      if (!topicRec) return;
+      // delete old docs by topic foreign key column (topicId)
+      await this.docRepo
+        .createQueryBuilder()
+        .delete()
+        .where('topicId = :id', { id: topicRec.id })
+        .execute();
+      for (const t of blocks) {
+        const doc = this.docRepo.create({
+          topic: topicRec,
+          text: t,
+          fetchedAt: new Date(),
+        });
+        await this.docRepo.save(doc);
+      }
+    }
   }
 }

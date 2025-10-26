@@ -17,4 +17,10 @@ export class TopicsController {
     const res = this.topics.ask(id, question);
     return res;
   }
+
+  @Post(':id/refresh')
+  async refresh(@Param('id') id: string) {
+    const res = await this.topics.refreshTopic(id);
+    return res;
+  }
 }

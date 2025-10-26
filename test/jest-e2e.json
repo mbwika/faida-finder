@@ -1,6 +1,7 @@
 {
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": ".",
+  "setupFiles": ["<rootDir>/../src/polyfills/file.ts"],
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
