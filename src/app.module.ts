@@ -1,22 +1,20 @@
-import { Module } from '@nestjs/common';
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { TopicsModule } from "./topics/topics.module";
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TopicsModule } from './topics/topics.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { join } from 'path';
+import { Document } from "./entities/document.entity";
+import { Topic } from "./entities/topic.entity";
 
 @Module({
   imports: [
-    TopicsModule,
     TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: join(process.cwd(), 'data', 'faida.db'),
-      entities: [
-        join(__dirname, 'entities', '*.ts'),
-        join(__dirname, 'entities', '*.js'),
-      ],
+      type: "sqlite",
+      database: ":memory:",
+      entities: [Document, Topic],
       synchronize: true,
     }),
+    TopicsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
