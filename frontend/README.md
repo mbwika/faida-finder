@@ -1,52 +1,50 @@
-# Faida Finder Frontend# Getting Started with Create React App
+# Faida Finder Frontend
 
+React frontend for Faida Finder, a service that helps Kenyan citizens find and understand available social benefits and services. This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Features
 
-React frontend for Faida Finder, a service that helps Kenyan citizens find and understand available social benefits and services. This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
-
-
-
-## Features## Available Scripts
-
-
-
-- Browse available topics (NSSF Benefits, Disability Services, etc.)In the project directory, you can run:
-
+- Browse available topics (NSSF Benefits, Disability Services, etc.)
 - Ask questions about specific topics
-
-- View answers sourced from official government documentation### `npm start`
-
+- View answers sourced from official government documentation
 - Refresh topic data to ensure up-to-date information
 
-Runs the app in the development mode.\
+## Getting Started
 
-## Getting StartedOpen [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-
-
-### PrerequisitesThe page will reload if you make edits.\
-
-You will also see any lint errors in the console.
+### Prerequisites
 
 - Node.js (v18 or later recommended)
-
-- npm (usually comes with Node.js)### `npm test`
-
+- npm (usually comes with Node.js)
 - The Faida Finder backend running (default: http://localhost:3333)
 
-Launches the test runner in the interactive watch mode.\
+### Installation
 
-### InstallationSee the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-
-
-```bash### `npm run build`
-
+```bash
 # Install dependencies
+npm install
+```
 
-npm installBuilds the app for production to the `build` folder.\
+## Available Scripts
 
-```It correctly bundles React in production mode and optimizes the build for the best performance.
+In the project directory, you can run:
+
+### `npm start`
+
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+
+The page will reload if you make edits.\
+You will also see any lint errors in the console.
+
+### `npm test`
+
+Launches the test runner in the interactive watch mode.\
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+
+### `npm run build`
+
+Builds the app for production to the `build` folder.\
+It correctly bundles React in production mode and optimizes the build for the best performance.
 
 
 
