@@ -1,5 +1,5 @@
 
-# Faida Finder
+# Faida Finder Backend
 
 React frontend for Faida Finder, a service that helps Kenyan citizens find and understand available social benefits and services. This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
@@ -109,3 +109,4 @@ src/
 Create React App documentation: https://facebook.github.io/create-react-app/docs/getting-started 
 
 React documentation: https://reactjs.org/ 
+
